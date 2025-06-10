@@ -39,7 +39,7 @@ class Graph:
 
     def bfs(self, start):
         visited = set()
-        queue = deque[(start)]
+        queue = deque([start])
         results = []
         while queue:
             node = queue.popleft()

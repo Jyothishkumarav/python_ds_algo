@@ -32,22 +32,7 @@ def sliding_window_deque(arr, k):
             window.popleft()
 
     return result
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    data = [1, 3, -1, -3, 5, 3, 6, 7]
-    window_size = 3
-
-    windows = sliding_window_deque(data, window_size)
-    print(f"Input array: {data}")
-    print(f"Window size: {window_size}")
-    print("Sliding windows:")
-    for w in windows:
-        print(w)
-
-    print("\n--- Example: Finding max in each window ---")
-
-    def sliding_window_max(arr, k):
+def sliding_window_max(arr, k):
         if not arr or k <= 0 or k > len(arr):
             return []
 
@@ -74,6 +59,22 @@ if __name__ == "__main__":
             if i >= k - 1:
                 result.append(arr[dq[0]])
         return result
+
+# --- Example Usage ---
+if __name__ == "__main__":
+    data = [1, 3, -1, -3, 5, 3, 6, 7]
+    window_size = 3
+
+    windows = sliding_window_deque(data, window_size)
+    print(f"Input array: {data}")
+    print(f"Window size: {window_size}")
+    print("Sliding windows:")
+    for w in windows:
+        print(w)
+
+    print("\n--- Example: Finding max in each window ---")
+
+
 
     max_values = sliding_window_max(data, window_size)
     print(f"Input array: {data}")
