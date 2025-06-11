@@ -69,24 +69,51 @@ print(max_subarray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))  # Output: 6
 **Space Complexity**: O(n)
 **Analysis**: O(n log n) for sorting, O(n) for merging process.
 
+
+**Approach**
+
+Sort the intervals: Sorting by start time ensures we process intervals in order, making it easier to check for overlaps. If start times are equal, sort by end time to avoid edge cases.
+
+**Iterate and merge:**
+
+Keep track of the current interval (initially the first one).
+For each next interval, check if it overlaps with the current one (i.e., the next interval’s start is less than or equal to the current interval’s end).
+If they overlap, merge by updating the current interval’s end to the maximum of both ends.
+If they don’t overlap, add the current interval to the result and update the current interval to the next one.
+Add the last interval: After the loop, append the final current interval to the result.
+
 ```python
 def merge_intervals(intervals):
+    # If the list is empty, return empty list
     if not intervals:
         return []
     
-    intervals.sort(key=lambda x: x[0])
-    merged = [intervals[0]]
+    # Sort intervals by start time
+    intervals.sort(key=lambda x: (x[0], x[1]))
     
-    for current in intervals[1:]:
-        if current[0] <= merged[-1][1]:
-            merged[-1][1] = max(merged[-1][1], current[1])
+    # Initialize result list with the first interval
+    result = []
+    current_interval = intervals[0]
+    
+    # Iterate through the sorted intervals
+    for next_interval in intervals[1:]:
+        # If current interval overlaps with next interval
+        if current_interval[1] >= next_interval[0]:
+            # Merge by updating the end time
+            current_interval[1] = max(current_interval[1], next_interval[1])
         else:
-            merged.append(current)
+            # No overlap, append current interval and update to next
+            result.append(current_interval)
+            current_interval = next_interval
     
-    return merged
+    # Append the last interval
+    result.append(current_interval)
+    
+    return result
 
-# Test
-print(merge_intervals([[1,3],[2,6],[8,10],[15,18]]))  # Output: [[1,6],[8,10],[15,18]]
+# Test the function
+intervals = [[1,3], [2,6], [8,10], [15,18]]
+print(merge_intervals(intervals))  # Output: [[1,6], [8,10], [15,18]]  # Output: [[1,6],[8,10],[15,18]]
 ```
 
 ### 4. Product of Array Except Self
@@ -124,6 +151,34 @@ print(product_except_self([1, 2, 3, 4]))  # Output: [24, 12, 8, 6]
 **Space Complexity**: O(1)
 **Analysis**: Binary search approach, dividing search space by half each iteration.
 
+**Problem Understanding**
+
+Input: An array of integers, e.g., [1, 2, 3, 1].
+Output: The index of any peak element (an element greater than both its neighbors, or at the edges, greater than the single neighbor).
+
+**Constraints:**
+
+If the array has at least one element, a peak always exists (e.g., at the edges or a local maximum).
+For edge elements (first or last), we only compare with one neighbor.
+We need to find any peak, not all peaks.
+
+
+Example:
+Input: [1, 2, 3, 1] → Output: 2 (since nums[2] = 3 is greater than nums[1] = 2 and nums[3] = 1).
+Input: [1, 2, 1, 3, 5, 6, 4] → Output: 1 or 5 (since nums[1] = 2 is greater than 1 and 1, or nums[5] = 6 is greater than 5 and 4).
+
+**Approach**
+
+
+A peak element is guaranteed to exist because the array can be thought of as having imaginary elements of negative infinity at both ends (-∞, nums[0], ..., nums[n-1], -∞). A simple linear scan could work by checking each element against its neighbors, but this takes O(n) time. Since the problem often hints at a more efficient solution (e.g., in LeetCode’s “Find Peak Element”), we’ll use a binary search approach to achieve O(log n) time complexity.
+
+**Binary Search Idea :**
+A peak is an element greater than its neighbors, so the array must have at least one “hill” where values increase and then decrease.
+At any point, compare the middle element with its neighbor (e.g., the right neighbor):
+If nums[mid] > nums[mid+1], the middle element is greater than the right neighbor, so a peak must exist in the left half (including mid).
+If nums[mid] < nums[mid+1], the values are increasing, so a peak must exist in the right half (excluding mid).
+Adjust the search range accordingly and repeat until we find a peak.
+Handle edge cases (e.g., array length 1 or elements at boundaries).
 ```python
 def find_peak_element(nums):
     left, right = 0, len(nums) - 1
@@ -147,6 +202,54 @@ print(find_peak_element([1, 2, 3, 1]))  # Output: 2
 **Time Complexity**: O(n)
 **Space Complexity**: O(1)
 **Analysis**: Two pointers approach, single pass through array.
+
+**Problem Understanding**
+
+**Input:** An array of integers height, where height[i] is the height of a vertical line at index i. For example, [1,8,6,2,5,4,8,3,7].
+**Output:** The maximum area of water the container can hold, calculated as the area between two lines. The area is determined by the distance between the lines (width) and the minimum height of the two lines (height).
+**Area Formula: ** For lines at indices i and j (where i < j), the area is:
+
+**Area = min(text{height}[i], text{height}[j]) * times (j - i)**
+
+Goal: Find the pair of indices i and j that maximizes this area.
+Constraints:
+
+The array has at least 2 elements.
+Heights are non-negative integers.
+We can’t slant the container; lines are vertical.
+
+
+Example:
+
+Input: [1,8,6,2,5,4,8,3,7] → Output: 49 (lines at indices 1 and 8 with heights 8 and 7, width = 8 - 1 = 7, area = min(8,7) × 7 = 49).
+Input: [1,1] → Output: 1 (area = min(1,1) × 1 = 1).
+
+
+
+Approach
+A naive solution would be to try every pair of indices (i, j) and compute the area, but this takes O(n²) time. Instead, we’ll use a two-pointer technique to achieve O(n) time complexity, which is more efficient.
+Two-Pointer Idea
+
+Initialize two pointers: left at the start (index 0) and right at the end (index n-1).
+Compute the area between the lines at left and right:
+
+Width = right - left.
+Height = min(height[left], height[right]).
+Area = Width × Height.
+
+
+Update the maximum area seen so far.
+Move the pointer pointing to the shorter line inward:
+
+If height[left] <= height[right], increment left.
+Otherwise, decrement right.
+
+
+Repeat until left meets right.
+Why move the shorter line?
+
+The area is limited by the shorter height. Moving the taller line inward would reduce the width and keep the height the same or smaller (since the height is still limited by the shorter line or the new line’s height), so it can’t increase the area.
+Moving the shorter line gives a chance to find a taller line that might increase the area, despite the reduced width.
 
 ```python
 def max_area(height):
@@ -175,6 +278,108 @@ print(max_area([1, 8, 6, 2, 5, 4, 8, 3, 7]))  # Output: 49
 **Time Complexity**: O(n²)
 **Space Complexity**: O(1) excluding output
 **Analysis**: O(n log n) for sorting, O(n²) for nested loops with two pointers.
+
+
+**Problem Understanding**
+
+Input: An array of integers nums, e.g., [-1, 0, 1, 2, -1, -4].
+
+Output: A list of unique triplets [nums[i], nums[j], nums[k]] where i != j != k and nums[i] + nums[j] + nums[k] = 0.
+
+Constraints:
+T
+he array has at least 3 elements.
+Triplets must be unique (no duplicate triplets in the output).
+The order of numbers in a triplet doesn’t matter, but we typically return them sorted for consistency.
+Example:
+Input: [-1, 0, 1, 2, -1, -4] → Output: [[-1, -1, 2], [-1, 0, 1]].
+Input: [0, 0, 0] → Output: [[0, 0, 0]].
+Input: [1, 2, 3] → Output: [] (no triplets sum to zero).
+# 3Sum Problem: Approach in Two-Pointer Technique
+
+The **3Sum** problem requires finding all unique triplets in an array of integers that sum to zero. Below is a step-by-step explanation of the efficient two-pointer approach to solve this problem.
+
+## Problem Statement
+- **Input**: An array of integers `nums` (e.g., `[-1, 0, 1, 2, -1, -4]`).
+- **Output**: A list of unique triplets `[nums[i], nums[j], nums[k]]` where `i != j != k` and `nums[i] + nums[j] + nums[k] = 0`.
+- **Goal**: Return all such triplets without duplicates (e.g., `[[-1, -1, 2], [-1, 0, 1]]`).
+
+## Approach: Two-Pointer Technique
+
+This approach achieves O(n²) time complexity by sorting the array and using two pointers to find pairs that sum to a target value for each fixed element.
+
+### Step-by-Step Approach
+
+1. **Check Input Size**:
+   - If the array has fewer than 3 elements, no triplets are possible.
+   - Return an empty list.
+
+2. **Sort the Array**:
+   - Sort the input array in ascending order (O(n log n)).
+   - Sorting helps:
+     - Use two pointers efficiently.
+     - Skip duplicates to ensure unique triplets.
+   - Example: `[-1, 0, 1, 2, -1, -4]` becomes `[-4, -1, -1, 0, 1, 2]`.
+
+3. **Iterate Over the First Element**:
+   - For each index `i` from 0 to `n-3` (where `n` is the array length):
+     - Use `nums[i]` as the first number of the triplet.
+     - Skip if `nums[i] == nums[i-1]` (for `i > 0`) to avoid duplicate triplets starting with the same number.
+     - Set `target = -nums[i]` (we need `nums[left] + nums[right] = -nums[i]`).
+
+4. **Two-Pointer Search for Remaining Two Numbers**:
+   - Initialize two pointers:
+     - `left = i + 1` (start of the subarray after `i`).
+     - `right = n - 1` (end of the array).
+   - While `left < right`:
+     - Compute `current_sum = nums[left] + nums[right]`.
+     - If `current_sum == target`:
+       - Add the triplet `[nums[i], nums[left], nums[right]]` to the result.
+       - Skip duplicates:
+         - Increment `left` while `nums[left] == nums[left + 1]` to avoid duplicate second numbers.
+         - Decrement `right` while `nums[right] == nums[right - 1]` to avoid duplicate third numbers.
+       - Move `left += 1` and `right -= 1` to continue searching.
+     - If `current_sum < target`:
+       - Increment `left` to increase the sum (since array is sorted).
+     - If `current_sum > target`:
+       - Decrement `right` to decrease the sum.
+
+5. **Return the Result**:
+   - The result contains all unique triplets that sum to zero.
+
+### Example Walkthrough
+- **Input**: `[-1, 0, 1, 2, -1, -4]`
+- **Sorted**: `[-4, -1, -1, 0, 1, 2]`
+- **Steps**:
+  - For `i = 0` (`nums[i] = -4`, `target = 4`):
+    - `left = 1`, `right = 5`: `-1 + 2 = 1 < 4` → `left += 1`.
+    - Continue; no triplets found.
+  - For `i = 1` (`nums[i] = -1`, `target = 1`):
+    - `left = 2`, `right = 5`: `-1 + 2 = 1` → Add `[-1, -1, 2]`, skip duplicate `left`, move pointers.
+    - `left = 3`, `right = 4`: `0 + 1 = 1` → Add `[-1, 0, 1]`, move pointers.
+  - For `i = 2`: Skip since `nums[2] = -1` duplicates `nums[1]`.
+  - Continue until `i = n-3`.
+- **Output**: `[[-1, -1, 2], [-1, 0, 1]]`.
+
+### Why It Works
+- **Sorting**: Enables efficient two-pointer search and duplicate handling.
+- **Two Pointers**: Reduces the O(n³) brute-force approach to O(n²) by fixing one element and searching for two others.
+- **Duplicate Handling**: Skipping identical values at `i`, `left`, and `right` ensures unique triplets.
+- **Correctness**: All possible triplets are considered by iterating `i` and scanning the remaining array.
+
+### Complexity
+- **Time Complexity**: O(n²)
+  - Sorting: O(n log n).
+  - For each `i` (O(n)), two-pointer search is O(n).
+- **Space Complexity**: O(1) or O(n) (depending on sorting implementation), excluding the output.
+
+### Edge Cases
+- **Empty or < 3 elements**: Return `[]`.
+- **All zeros**: `[[0, 0, 0]]` (e.g., `[0, 0, 0]`).
+- **No solution**: Return `[]` (e.g., `[1, 2, 3]`).
+- **Duplicates**: Handled by skipping identical values.
+
+This approach is efficient and ensures all unique zero-sum triplets are found.
 
 ```python
 def three_sum(nums):
@@ -250,29 +455,303 @@ print(search_rotated([4, 5, 6, 7, 0, 1, 2], 0))  # Output: 4
 **Space Complexity**: O(n)
 **Analysis**: Convert to set (O(n)), then iterate checking sequences (O(n) total).
 
+The Longest Consecutive Sequence problem requires finding the length of the longest sequence of consecutive integers in an unsorted array. Below is a step-by-step explanation of an efficient O(n) approach using a hash set, followed by the Python code.
+
+Problem Statement
+
+
+
+
+
+Input: An unsorted array of integers nums (e.g., [100, 4, 200, 1, 3, 2]).
+
+
+
+Output: The length of the longest sequence of consecutive integers (e.g., [1, 2, 3, 4] has length 4).
+
+
+
+Goal: Return the length of the longest consecutive sequence, handling duplicates and ensuring O(n) time complexity.
+
+Approach: Hash Set Technique
+
+This approach uses a hash set to achieve O(n) time complexity by enabling O(1) lookups to check for consecutive numbers. We only count sequences starting from numbers without a predecessor to avoid redundant work.
+
+Step-by-Step Approach
+
+
+
+
+
+Handle Empty Input:
+
+
+
+
+
+If the array is empty, return 0, as no sequence exists.
+
+
+
+Convert Array to Hash Set:
+
+
+
+
+
+Create a hash set from the input array to:
+
+
+
+
+
+Remove duplicates (duplicates don’t affect sequence length).
+
+
+
+Enable O(1) lookups for checking consecutive numbers.
+
+
+
+Example: [100, 4, 200, 1, 3, 2] becomes {1, 2, 3, 4, 100, 200}.
+
+
+
+Iterate Through Each Number:
+
+
+
+
+
+For each number num in the set:
+
+
+
+
+
+Check if num is the start of a sequence by verifying that num-1 is not in the set.
+
+
+
+This ensures we process each sequence only from its smallest number.
+
+
+
+Count Sequence Length:
+
+
+
+
+
+If num-1 is not in the set, num is a sequence start.
+
+
+
+Initialize current_length = 1 and current_num = num.
+
+
+
+While current_num + 1 exists in the set:
+
+
+
+
+
+Increment current_num and current_length.
+
+
+
+Update the maximum sequence length if current_length is larger.
+
+
+
+Return the Maximum Length:
+
+
+
+
+
+Return the longest sequence length found after checking all potential starts.
+
+Example Walkthrough
+
+
+
+
+
+Input: [100, 4, 200, 1, 3, 2]
+
+
+
+Step 1: Create Set:
+
+
+
+
+
+num_set = {1, 2, 3, 4, 100, 200}
+
+
+
+Step 2: Iterate and Check Sequences:
+
+
+
+
+
+For num = 1: 0 not in set → Start sequence.
+
+
+
+
+
+Check 2 (in set, length = 2), 3 (in set, length = 3), 4 (in set, length = 4), 5 (not in set).
+
+
+
+Sequence: [1, 2, 3, 4], length = 4. Update max_length = 4.
+
+
+
+For num = 2: 1 in set → Not a start, skip.
+
+
+
+For num = 3: 2 in set → Skip.
+
+
+
+For num = 4: 3 in set → Skip.
+
+
+
+For num = 100: 99 not in set → Start sequence.
+
+
+
+
+
+Check 101 (not in set). Sequence: [100], length = 1. max_length stays 4.
+
+
+
+For num = 200: 199 not in set → Start sequence.
+
+
+
+
+
+Check 201 (not in set). Sequence: [200], length = 1. max_length stays 4.
+
+
+
+Output: 4 (from sequence [1, 2, 3, 4]).
+
+Why It Works
+
+
+
+
+
+Hash Set: Provides O(1) lookups to check for num-1 and consecutive numbers.
+
+
+
+Sequence Start Check: Only starting from numbers without a predecessor ensures each sequence is counted once.
+
+
+
+Duplicate Handling: The set removes duplicates, so they don’t affect the result.
+
+
+
+Correctness: All possible sequences are considered by checking each potential start.
+
+Complexity
+
+
+
+
+
+Time Complexity: O(n)
+
+
+
+
+
+Creating the set: O(n).
+
+
+
+Iterating through the set: O(n).
+
+
+
+Each number is checked at most twice (once in the loop, once in sequence counting), ensuring O(n) total lookups.
+
+
+
+Space Complexity: O(n) for the hash set, excluding the output.
+
+Edge Cases
+
+
+
+
+
+Empty array: Return 0.
+
+
+
+Single element: Return 1 (e.g., [5] → sequence [5]).
+
+
+
+No consecutive numbers: Return 1 (e.g., [1, 3, 5] → longest sequence is [1], [3], or [5]).
+
+
+
+Duplicates: Handled by the set (e.g., [1, 1, 1, 2, 3] → sequence [1, 2, 3]).
+
+
+
+Large sequences: Works efficiently due to O(n) lookups.
+
+
 ```python
-def longest_consecutive(nums):
+def longestConsecutive(nums):
+    # Handle empty input
     if not nums:
         return 0
     
+    # Convert array to set for O(1) lookups
     num_set = set(nums)
-    longest = 0
+    max_length = 0
     
+    # Check each number as a potential sequence start
     for num in num_set:
-        if num - 1 not in num_set:  # Start of sequence
+        # Only start sequence if num-1 is not in set
+        if num - 1 not in num_set:
             current_num = num
             current_length = 1
             
+            # Count consecutive numbers
             while current_num + 1 in num_set:
                 current_num += 1
                 current_length += 1
             
-            longest = max(longest, current_length)
+            # Update max length
+            max_length = max(max_length, current_length)
     
-    return longest
+    return max_length
+
+# Test cases
+print(longestConsecutive([100, 4, 200, 1, 3, 2]))  # Output: 4
+print(longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1]))  # Output: 9
+print(longestConsecutive([]))  # Output: 0
+print(longestConsecutive([1, 1, 1]))  # Output: 1
 
 # Test
-print(longest_consecutive([100, 4, 200, 1, 3, 2]))  # Output: 4
 ```
 
 ### 10. Best Time to Buy and Sell Stock
@@ -307,27 +786,274 @@ print(max_profit([7, 1, 5, 3, 6, 4]))  # Output: 5
 **Space Complexity**: O(1)
 **Analysis**: Three passes through array with constant operations.
 
+The Next Permutation problem requires rearranging an array of integers into the next lexicographically greater permutation. If no such permutation exists, the array is rearranged to the first permutation (ascending order). Below is a step-by-step explanation of an efficient O(n) approach, followed by the Python code.
+
+Problem Statement
+
+
+
+
+
+Input: An array of integers nums (e.g., [1, 2, 3]).
+
+
+
+Output: Modify nums in-place to the next lexicographically greater permutation (e.g., [1, 3, 2]). If the array is the last permutation (e.g., [3, 2, 1]), rearrange to the first permutation ([1, 2, 3]).
+
+
+
+Goal: Perform the transformation in-place with O(n) time complexity.
+
+Approach: In-Place Rearrangement
+
+This approach finds the next permutation by identifying a decreasing point, swapping with the smallest greater element, and reversing the remaining subarray to minimize the increase.
+
+Step-by-Step Approach
+
+
+
+
+
+Find the First Decreasing Element:
+
+
+
+
+
+Traverse the array from right to left (from index n-2 to 0).
+
+
+
+Find the first index i where nums[i] < nums[i+1].
+
+
+
+This indicates that the subarray from i+1 to the end is in descending order, and nums[i] is the element to replace.
+
+
+
+If no such i exists, the array is in descending order (last permutation).
+
+
+
+Find the Smallest Element Greater than nums[i]:
+
+
+
+
+
+If i is found, traverse from the end to i+1 to find the smallest index j where nums[j] > nums[i].
+
+
+
+This ensures the smallest possible increase in the permutation.
+
+
+
+Swap Elements:
+
+
+
+
+
+Swap nums[i] and nums[j] to form the next permutation’s prefix.
+
+
+
+Reverse the Subarray After i:
+
+
+
+
+
+The subarray from i+1 to the end is in descending order.
+
+
+
+Reverse it to ascending order to make it the smallest possible subarray.
+
+
+
+Handle Last Permutation:
+
+
+
+
+
+If no i is found (array is descending), reverse the entire array to get the first permutation.
+
+Example Walkthrough
+
+
+
+
+
+Input: [1, 2, 3]
+
+
+
+Step 1: Find Decreasing Element:
+
+
+
+
+
+From right: nums[1] = 2 < nums[2] = 3, so i = 1.
+
+
+
+Step 2: Find Smallest Greater Element:
+
+
+
+
+
+From end, find j where nums[j] > nums[1] = 2: nums[2] = 3 > 2, so j = 2.
+
+
+
+Step 3: Swap:
+
+
+
+
+
+Swap nums[1] = 2 and nums[2] = 3: Array becomes [1, 3, 2].
+
+
+
+Step 4: Reverse Subarray:
+
+
+
+
+
+Subarray after i=1 is [2], already sorted (single element).
+
+
+
+Output: [1, 3, 2].
+
+
+
+Input: [3, 2, 1]
+
+
+
+Step 1: No i where nums[i] < nums[i+1] (array is descending).
+
+
+
+Step 2: Reverse entire array: [1, 2, 3].
+
+
+
+Output: [1, 2, 3].
+
+Why It Works
+
+
+
+
+
+Lexicographical Order: Swapping nums[i] with the smallest nums[j] > nums[i] ensures a minimal increase.
+
+
+
+Subarray Minimization: Reversing the subarray after i makes it ascending, ensuring the smallest possible tail.
+
+
+
+Correctness: All permutations are ordered lexicographically, and this algorithm finds the immediate next one.
+
+
+
+In-Place: Modifications are done without extra space.
+
+Complexity
+
+
+
+
+
+Time Complexity: O(n)
+
+
+
+
+
+Finding i: O(n).
+
+
+
+Finding j: O(n).
+
+
+
+Reversing subarray: O(n).
+
+
+
+Space Complexity: O(1), as all operations are in-place.
+
+Edge Cases
+
+
+
+
+
+Single element: [1] → No change (only one permutation).
+
+
+
+Two elements: [1, 2] → [2, 1], [2, 1] → [1, 2].
+
+
+
+Descending order: [3, 2, 1] → [1, 2, 3] (first permutation).
+
+
+
+Duplicates: Handled correctly (e.g., [1, 1, 5] → [1, 5, 1]).
+
 ```python
-def next_permutation(nums):
-    # Find the largest index i such that nums[i] < nums[i + 1]
+def nextPermutation(nums):
+    # Step 1: Find first decreasing element from right
     i = len(nums) - 2
     while i >= 0 and nums[i] >= nums[i + 1]:
         i -= 1
     
+    # Step 2: If i exists, find smallest j where nums[j] > nums[i]
     if i >= 0:
-        # Find the largest index j such that nums[i] < nums[j]
         j = len(nums) - 1
         while nums[j] <= nums[i]:
             j -= 1
+        # Step 3: Swap nums[i] and nums[j]
         nums[i], nums[j] = nums[j], nums[i]
     
-    # Reverse the suffix starting at nums[i + 1]
-    nums[i + 1:] = reversed(nums[i + 1:])
+    # Step 4: Reverse subarray from i+1 to end
+    left, right = i + 1, len(nums) - 1
+    while left < right:
+        nums[left], nums[right] = nums[right], nums[left]
+        left += 1
+        right -= 1
 
-# Test
-nums = [1, 2, 3]
-next_permutation(nums)
-print(nums)  # Output: [1, 3, 2]
+# Test cases (call modifies nums in-place)
+nums1 = [1, 2, 3]
+nextPermutation(nums1)
+print(nums1)  # Output: [1, 3, 2]
+
+nums2 = [3, 2, 1]
+nextPermutation(nums2)
+print(nums2)  # Output: [1, 2, 3]
+
+nums3 = [1, 1, 5]
+nextPermutation(nums3)
+print(nums3)  # Output: [1, 5, 1]
+
+nums4 = [1]
+nextPermutation(nums4)
+print(nums4)  # Output: [1]
 ```
 
 ### 12. Subarray Sum Equals K
@@ -337,22 +1063,241 @@ print(nums)  # Output: [1, 3, 2]
 **Space Complexity**: O(n)
 **Analysis**: Single pass with hash map to store prefix sums.
 
+Subarray Sum Equals K: Hash Map Approach and Code
+
+The Subarray Sum Equals K problem requires finding the number of continuous subarrays in an array of integers that sum to a given target k. Below is a step-by-step explanation of an efficient O(n) approach using a hash map with cumulative sums, followed by the Python code.
+
+Problem Statement
+
+
+
+
+
+Input: An array of integers nums and an integer k (e.g., nums = [1, 1, 1], k = 2).
+
+
+
+Output: The number of continuous subarrays whose elements sum to k (e.g., 2 for subarrays [1, 1]).
+
+
+
+Goal: Count all valid subarrays efficiently, handling positive and negative integers.
+
+Approach: Hash Map with Cumulative Sum
+
+This approach uses a hash map to track cumulative sums, achieving O(n) time complexity by leveraging the relationship between subarray sums and prefix sums.
+
+Step-by-Step Approach
+
+
+
+
+
+Initialize Data Structures:
+
+
+
+
+
+Create a hash map sum_freq to store the frequency of cumulative sums.
+
+
+
+Initialize sum_freq[0] = 1 to account for subarrays starting from index 0 that sum to k.
+
+
+
+Initialize curr_sum = 0 (running cumulative sum) and count = 0 (number of valid subarrays).
+
+
+
+Iterate Through the Array:
+
+
+
+
+
+For each element nums[i]:
+
+
+
+
+
+Update curr_sum += nums[i] to include the current element.
+
+
+
+Check if curr_sum - k exists in sum_freq. If so, add its frequency to count (each occurrence represents a subarray ending at i with sum k).
+
+
+
+Increment the frequency of curr_sum in sum_freq.
+
+
+
+Return the Result:
+
+
+
+
+
+After the loop, return count, the total number of subarrays summing to k.
+
+Example Walkthrough
+
+
+
+
+
+Input: nums = [1, 1, 1], k = 2
+
+
+
+Initialization: sum_freq = {0: 1}, curr_sum = 0, count = 0
+
+
+
+Step-by-Step:
+
+
+
+
+
+Index 0: curr_sum = 0 + 1 = 1
+
+
+
+
+
+Check curr_sum - k = 1 - 2 = -1 → Not in sum_freq.
+
+
+
+Update sum_freq[1] = 1 → sum_freq = {0: 1, 1: 1}
+
+
+
+Index 1: curr_sum = 1 + 1 = 2
+
+
+
+
+
+Check curr_sum - k = 2 - 2 = 0 → sum_freq[0] = 1, so count += 1 (subarray [1, 1]).
+
+
+
+Update sum_freq[2] = 1 → sum_freq = {0: 1, 1: 1, 2: 1}
+
+
+
+Index 2: curr_sum = 2 + 1 = 3
+
+
+
+
+
+Check curr_sum - k = 3 - 2 = 1 → sum_freq[1] = 1, so count += 1 (subarray [1, 1]).
+
+
+
+Update sum_freq[3] = 1 → sum_freq = {0: 1, 1: 1, 2: 1, 3: 1}
+
+
+
+Output: count = 2 (subarrays [1, 1] at indices [0,1] and [1,2]).
+
+Why It Works
+
+
+
+
+
+Cumulative Sum: A subarray from i to j sums to k if sum[j] - sum[i-1] = k. Thus, we look for sum[j] - k in previous sums.
+
+
+
+Hash Map: Stores frequencies of cumulative sums, allowing O(1) lookups to count valid subarrays.
+
+
+
+Correctness: All continuous subarrays are considered by tracking cumulative sums and their differences.
+
+
+
+Efficiency: Each element is processed once with O(1) hash map operations.
+
+Complexity
+
+
+
+
+
+Time Complexity: O(n)
+
+
+
+
+
+Iterate through the array once: O(n).
+
+
+
+Hash map operations (lookup and update) are O(1) on average.
+
+
+
+Space Complexity: O(n) for the hash map to store cumulative sums.
+
+Edge Cases
+
+
+
+
+
+Empty array: Return 0 (no subarrays).
+
+
+
+Single element: If nums[0] == k, return 1; else 0.
+
+
+
+Negative numbers: Handled by cumulative sum (e.g., [1, -1, 1], k = 0 → finds [1, -1]).
+
+
+
+Duplicates: Handled correctly by frequency counting.
+
+
+
+k = 0: Handled by checking for same cumulative sum (e.g., [1, -1]).
+
+
+
 ```python
-def subarray_sum(nums, k):
+def subarraySum(nums, k):
+    # Initialize hash map, cumulative sum, and count
+    sum_freq = {0: 1}  # Initialize with 0 sum for subarrays starting at index 0
+    curr_sum = 0
     count = 0
-    prefix_sum = 0
-    sum_count = {0: 1}  # Handle subarrays starting from index 0
     
+    # Iterate through the array
     for num in nums:
-        prefix_sum += num
-        if prefix_sum - k in sum_count:
-            count += sum_count[prefix_sum - k]
-        sum_count[prefix_sum] = sum_count.get(prefix_sum, 0) + 1
+        curr_sum += num  # Update cumulative sum
+        # Check if curr_sum - k exists in sum_freq
+        if curr_sum - k in sum_freq:
+            count += sum_freq[curr_sum - k]
+        # Update frequency of current sum
+        sum_freq[curr_sum] = sum_freq.get(curr_sum, 0) + 1
     
     return count
 
-# Test
-print(subarray_sum([1, 1, 1], 2))  # Output: 2
+# Test cases
+print(subarraySum([1, 1, 1], 2))  # Output: 2
+print(subarraySum([1, 2, 3], 3))  # Output: 2
+print(subarraySum([1], 0))  # Output: 0
+print(subarraySum([1, -1, 1], 0))  # Output: 1
 ```
 
 ---
@@ -421,6 +1366,301 @@ print(is_palindrome("A man, a plan, a canal: Panama"))  # Output: True
 **Time Complexity**: O(n * k log k) where k is max string length
 **Space Complexity**: O(n * k)
 **Analysis**: For each string, sorting takes O(k log k), done for n strings.
+The Group Anagrams problem requires grouping strings that are anagrams of each other into sublists. Below is a step-by-step explanation of an efficient approach using sorting and a hash map, achieving O(n * k log k) time complexity, followed by the Python code and a clarification on why sorted(s) cannot be used directly as a hash map key.
+
+Problem Statement
+
+
+
+
+
+Input: An array of strings strs (e.g., ["eat", "tea", "tan", "ate", "nat", "bat"]).
+
+
+
+Output: A list of lists, where each sublist contains strings that are anagrams (e.g., [["eat", "tea", "ate"], ["tan", "nat"], ["bat"]]).
+
+
+
+Goal: Group all anagrams together efficiently, handling empty inputs and duplicates.
+
+Approach: Sorting with Hash Map
+
+This approach sorts each string’s characters to create a key and uses a hash map to group anagrams, matching the specified O(n * k log k) time complexity, where n is the number of strings and k is the maximum string length.
+
+Step-by-Step Approach
+
+
+
+
+
+Initialize a Hash Map:
+
+
+
+
+
+Create a hash map anagram_groups where:
+
+
+
+
+
+Key: The sorted string (characters sorted in ascending order, joined into a string).
+
+
+
+Value: A list of strings that share the same sorted characters (anagrams).
+
+
+
+Process Each String:
+
+
+
+
+
+For each string s in strs:
+
+
+
+
+
+Sort its characters using sorted(s) to get a list of characters (e.g., "eat" → ['a', 'e', 't']).
+
+
+
+Join the sorted characters into a string with ''.join(sorted(s)) to create a hashable key (e.g., "aet").
+
+
+
+Add the original string to the list associated with this key in the hash map.
+
+
+
+Why Not Use sorted(s) Directly?:
+
+
+
+
+
+sorted(s) returns a list, which is unhashable (mutable) and cannot be a dictionary key.
+
+
+
+We need a hashable type like a string (via ''.join(sorted(s))) or tuple (via tuple(sorted(s))) to use as a key.
+
+
+
+Return the Result:
+
+
+
+
+
+Return the values of the hash map as a list of lists, containing all anagram groups.
+
+Example Walkthrough
+
+
+
+
+
+Input: ["eat", "tea", "tan", "ate", "nat", "bat"]
+
+
+
+Step 1: Initialize:
+
+
+
+
+
+anagram_groups = {}
+
+
+
+Step 2: Process Strings:
+
+
+
+
+
+"eat": sorted("eat") = ['a', 'e', 't'], ''.join(sorted("eat")) = "aet". Add to anagram_groups["aet"] = ["eat"].
+
+
+
+"tea": sorted("tea") = ['a', 'e', 't'], ''.join = "aet". Add to anagram_groups["aet"] = ["eat", "tea"].
+
+
+
+"tan": sorted("tan") = ['a', 'n', 't'], ''.join = "ant". Add to anagram_groups["ant"] = ["tan"].
+
+
+
+"ate": sorted("ate") = ['a', 'e', 't'], ''.join = "aet". Add to anagram_groups["aet"] = ["eat", "tea", "ate"].
+
+
+
+"nat": sorted("nat") = ['a', 'n', 't'], ''.join = "ant". Add to anagram_groups["ant"] = ["tan", "nat"].
+
+
+
+"bat": sorted("bat") = ['a', 'b', 't'], ''.join = "abt". Add to anagram_groups["abt"] = ["bat"].
+
+
+
+Step 3: Return Values:
+
+
+
+
+
+Output: [["eat", "tea", "ate"], ["tan", "nat"], ["bat"]]
+
+Doubt Clarification: Why Not Use sorted(s) Directly?
+
+
+
+
+
+Problem with sorted(s):
+
+
+
+
+
+sorted(s) returns a list of characters (e.g., "eat" → ['a', 'e', 't']).
+
+
+
+Lists are mutable and unhashable, so they cannot be used as dictionary keys. Attempting to use anagram_groups[sorted(s)] raises TypeError: unhashable type: 'list'.
+
+
+
+Need for Hashable Key:
+
+
+
+
+
+Dictionary keys must be immutable and hashable (implement __hash__).
+
+
+
+Strings and tuples are hashable; lists are not.
+
+
+
+''.join(sorted(s)) converts the sorted list to a string (e.g., "aet"), which is hashable and identical for all anagrams.
+
+
+
+Alternative: Tuple:
+
+
+
+
+
+Using tuple(sorted(s)) (e.g., ('a', 'e', 't')) is possible, as tuples are hashable.
+
+
+
+However, strings are more concise, memory-efficient, and readable, so ''.join(sorted(s)) is preferred.
+
+
+
+Why Convert to String:
+
+
+
+
+
+Ensures a consistent, hashable key for grouping anagrams.
+
+
+
+Example: "eat", "tea", and "ate" all map to "aet", allowing them to be grouped together.
+
+Why It Works
+
+
+
+
+
+Sorting: Anagrams have identical sorted characters, so sorting provides a unique key for each anagram group.
+
+
+
+Hash Map: Groups strings with the same sorted key efficiently.
+
+
+
+Correctness: All strings are processed, and anagrams are grouped based on their sorted form.
+
+
+
+Uniqueness: The hash map ensures each group contains only anagrams.
+
+Complexity
+
+
+
+
+
+Time Complexity: O(n * k log k)
+
+
+
+
+
+Sorting each string of length k: O(k log k).
+
+
+
+Processing n strings: O(n * k log k).
+
+
+
+Hash map operations are O(1) on average.
+
+
+
+Space Complexity: O(n * k)
+
+
+
+
+
+Hash map stores n strings, each up to k characters.
+
+
+
+Additional space for sorted keys is proportional to n * k.
+
+Edge Cases
+
+
+
+
+
+Empty array: Return [].
+
+
+
+Single string: Return [[string]] (e.g., ["a"] → [["a"]]).
+
+
+
+Empty strings: Return [[""]] for [""].
+
+
+
+Identical strings: Group together (e.g., ["a", "a"] → [["a", "a"]]).
+
+
+
+No anagrams: Each string in its own group (e.g., ["a", "b"] → [["a"], ["b"]]).
 
 ```python
 def group_anagrams(strs):
@@ -445,6 +1685,174 @@ print(group_anagrams(["eat", "tea", "tan", "ate", "nat", "bat"]))
 **Time Complexity**: O(n²)
 **Space Complexity**: O(1)
 **Analysis**: For each center, expand palindrome check takes O(n), done for 2n-1 centers.
+
+The Longest Palindromic Substring problem requires finding the longest substring in a string that is a palindrome. Below is a step-by-step explanation of a simple O(n²) expand-around-center approach, followed by the Python code. A brief overview of the O(n) Manacher’s Algorithm is included for reference.
+
+Problem Statement
+
+
+
+
+
+Input: A string s (e.g., "babad").
+
+
+
+Output: The longest substring of s that is a palindrome (e.g., "bab" or "aba").
+
+
+
+Goal: Find the longest palindromic substring efficiently, handling single characters, empty strings, and various input types.
+
+Approach: Expand-Around-Center
+
+This approach treats each character and gap between characters as a potential palindrome center, expanding outward to find the longest palindrome. It’s simple and intuitive, with O(n²) time complexity.
+
+Step-by-Step Approach
+
+
+
+
+
+Initialize Tracking Variables:
+
+
+
+
+
+Keep track of the start index (start) and maximum length (max_len) of the longest palindrome found.
+
+
+
+Iterate Through Centers:
+
+
+
+
+
+For each index i from 0 to len(s) - 1:
+
+
+
+
+
+Check for an odd-length palindrome centered at i (e.g., "aba").
+
+
+
+Check for an even-length palindrome centered between i and i+1 (e.g., "bb").
+
+
+
+Expand Around Center:
+
+
+
+
+
+For a center (odd or even), expand outward by comparing characters on both sides (left and right) while:
+
+
+
+
+
+left >= 0 and right < len(s).
+
+
+
+s[left] == s[right].
+
+
+
+Compute the length of the palindrome: right - left - 1.
+
+
+
+Update start and max_len if the current palindrome is longer.
+
+
+
+Return the Substring:
+
+
+
+
+
+Use start and max_len to extract the substring s[start:start + max_len].
+
+Example Walkthrough
+
+
+
+
+
+Input: "babad"
+
+
+
+Step 1: Initialize:
+
+
+
+
+
+start = 0, max_len = 0
+
+
+
+Step 2: Iterate Centers:
+
+
+
+
+
+i = 0: Center at b (odd): Expand → "b", length = 1. Update start = 0, max_len = 1.
+
+
+
+i = 0-1: Gap between b and a (even): No palindrome (no matching characters). Length = 0.
+
+
+
+i = 1: Center at a (odd): Expand → "a", length = 1. No update (max_len = 1).
+
+
+
+i = 1-2: Gap between a and b: Expand → "aba", length = 3. Update start = 1, max_len = 3.
+
+
+
+i = 2: Center at b: Expand → "bab", length = 3. No update (same length, keep first found).
+
+
+
+i = 2-3: Gap between b and a: No palindrome. Length = 0.
+
+
+
+i = 3: Center at a: Expand → "a", length = 1. No update.
+
+
+
+i = 3-4: Gap between a and d: No palindrome. Length = 0.
+
+
+
+i = 4: Center at d: Expand → "d", length = 1. No update.
+
+
+
+Step 3: Return:
+
+
+
+
+
+start = 1, max_len = 3 → s[1:4] = "aba"
+
+
+
+Output: "aba" (or "bab" if we kept a later palindrome of equal length).
 
 ```python
 def longest_palindrome(s):
@@ -541,6 +1949,327 @@ print(str_str("aaaaa", "bba"))  # Output: -1
 **Time Complexity**: O(n + m)
 **Space Complexity**: O(n + m)
 **Analysis**: Sliding window with character frequency maps, each character processed at most twice.
+
+The Minimum Window Substring problem requires finding the smallest substring in string s that contains all characters of string t (including duplicates). Below is a step-by-step explanation of an efficient O(n + m) sliding window approach using hash maps, followed by the Python code.
+
+Problem Statement
+
+
+
+
+
+Input: Two strings s and t (e.g., s = "ADOBECODEBANC", t = "ABC").
+
+
+
+Output: The smallest substring of s containing all characters of t with their required frequencies (e.g., "BANC"). If no such substring exists, return "".
+
+
+
+Goal: Find the minimum window efficiently, handling case sensitivity and duplicates.
+
+Approach: Sliding Window with Hash Map
+
+This approach uses a sliding window with two hash maps to track character frequencies, achieving O(n + m) time complexity, where n = len(s) and m = len(t). Each character is processed at most twice (when added and removed from the window).
+
+Step-by-Step Approach
+
+
+
+
+
+Handle Edge Cases:
+
+
+
+
+
+If len(s) < len(t), return "" (no possible window).
+
+
+
+If t is empty, return "".
+
+
+
+Build Frequency Map for t:
+
+
+
+
+
+Create a hash map t_freq to store the frequency of each character in t.
+
+
+
+Track the number of unique characters in t (required).
+
+
+
+Initialize Sliding Window:
+
+
+
+
+
+Create a hash map window_freq for the current window’s character frequencies.
+
+
+
+Initialize pointers left and right to 0.
+
+
+
+Track matched (number of characters in the window matching t’s required frequency).
+
+
+
+Track the minimum window’s start index (min_start) and length (min_len).
+
+
+
+Expand the Window:
+
+
+
+
+
+Move right to include characters in the window.
+
+
+
+Update window_freq for each character.
+
+
+
+If the character is in t_freq and its frequency in the window meets or exceeds t_freq, increment matched.
+
+
+
+Shrink the Window:
+
+
+
+
+
+When matched == required (window contains all characters of t):
+
+
+
+
+
+Shrink the window by moving left while maintaining validity.
+
+
+
+Update window_freq and matched as characters are removed.
+
+
+
+If the current window is smaller than min_len, update min_start and min_len.
+
+
+
+Return the Result:
+
+
+
+
+
+If min_len is infinity (no valid window found), return "".
+
+
+
+Otherwise, return s[min_start:min_start + min_len].
+
+Example Walkthrough
+
+
+
+
+
+Input: s = "ADOBECODEBANC", t = "ABC"
+
+
+
+Step 1: Initialize:
+
+
+
+
+
+t_freq = {'A': 1, 'B': 1, 'C': 1}, required = 3
+
+
+
+window_freq = {}, matched = 0, left = 0, right = 0
+
+
+
+min_start = 0, min_len = float('inf')
+
+
+
+Step 2: Slide Window:
+
+
+
+
+
+right = 0: s[0] = A, window_freq = {'A': 1}, matched = 1 (A matches).
+
+
+
+right = 1: s[1] = D, window_freq = {'A': 1, 'D': 1}, no change in matched.
+
+
+
+right = 2: s[2] = O, window_freq = {'A': 1, 'D': 1, 'O': 1}.
+
+
+
+right = 3: s[3] = B, window_freq = {'A': 1, 'D': 1, 'O': 1, 'B': 1}, matched = 2 (B matches).
+
+
+
+right = 4: s[4] = E, window_freq = {'A': 1, 'D': 1, 'O': 1, 'B': 1, 'E': 1}.
+
+
+
+right = 5: s[5] = C, window_freq = {'A': 1, 'D': 1, 'O': 1, 'B': 1, 'E': 1, 'C': 1}, matched = 3 (C matches).
+
+
+
+Valid window (matched == required): Window = "ADOBEC", length = 6. Update min_start = 0, min_len = 6.
+
+
+
+Shrink: Move left:
+
+
+
+
+
+left = 0: Remove A, window_freq['A'] = 0, matched = 2 (A no longer matches). Window invalid.
+
+
+
+right = 6: s[6] = O, window_freq['O'] = 2.
+
+
+
+Continue until right = 10: s[10] = B, window_freq = {'A': 1, 'D': 1, 'O': 2, 'B': 2, 'E': 1, 'C': 1, 'N': 1}, matched = 3.
+
+
+
+Valid window: "DOBECODEBANC", length = 12. No update (larger than 6).
+
+
+
+Shrink: Move left until left = 9 (remove D, O, B, E, C, O, D, E, B):
+
+
+
+
+
+Window = "BANC", window_freq = {'A': 1, 'N': 1, 'C': 1, 'B': 1}, matched = 3, length = 4.
+
+
+
+Update min_start = 9, min_len = 4.
+
+
+
+Continue until right reaches end, no smaller window found.
+
+
+
+Output: s[9:13] = "BANC"
+
+Why It Works
+
+
+
+
+
+Sliding Window: Ensures all valid substrings are considered by expanding until valid and shrinking to minimize.
+
+
+
+Hash Maps: Track required and current frequencies efficiently, allowing O(1) checks for validity.
+
+
+
+Correctness: The matched counter ensures the window contains all characters of t with correct frequencies.
+
+
+
+Minimality: Shrinking the window whenever valid ensures the smallest window is found.
+
+Complexity
+
+
+
+
+
+Time Complexity: O(n + m)
+
+
+
+
+
+Building t_freq: O(m).
+
+
+
+Sliding window: Each character in s is added (right moves) and removed (left moves) at most once, so O(n).
+
+
+
+Hash map operations: O(1) on average.
+
+
+
+Space Complexity: O(n + m)
+
+
+
+
+
+t_freq: O(m) for characters in t.
+
+
+
+window_freq: O(n) for characters in the window (worst case, all unique).
+
+
+
+Additional variables: O(1).
+
+Edge Cases
+
+
+
+
+
+Empty t: Return "".
+
+
+
+Empty s or len(s) < len(t): Return "".
+
+
+
+Single character: If s = "a", t = "a", return "a"; if t = "aa", return "".
+
+
+
+No valid window: Return "" (e.g., s = "ab", t = "A").
+
+
+
+Duplicates in t: Handled by frequency counts (e.g., s = "aaa", t = "aa" → "aa").
+
 
 ```python
 def min_window(s, t):
